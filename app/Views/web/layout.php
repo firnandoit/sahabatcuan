@@ -13,6 +13,7 @@
     <meta charset="UTF-8">
     <title><?= $title ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -22,7 +23,7 @@
             <a class="navbar-brand" href="/">SahabatCuan</a>
             <div class="navbar-nav">
                 <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link" href="/transactions">Transaksi</a>
+                <a class="nav-link" href="/web/transactions">Transaksi</a>
             </div>
         </div>
     </nav>

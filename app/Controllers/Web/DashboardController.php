@@ -10,9 +10,8 @@ class DashboardController extends BaseController
     public function index()
     {
         $db = \Config\Database::connect();
-        $userId = 1; // ID dari Seeder
+        $userId = 1;
 
-        // Ambil data portfolio + Join dengan harga pasar terakhir
         $portfolio = $db->table('user_portfolios p')
             ->select('p.*, m.last_price, s.company_name')
             ->join('market_prices m', 'm.ticker = p.ticker', 'left')
@@ -20,9 +19,24 @@ class DashboardController extends BaseController
             ->where('p.user_id', $userId)
             ->get()->getResultArray();
 
+        // Hitung Ringkasan Atas
+        $totalModal = 0;
+        $totalValue = 0;
+        foreach ($portfolio as $p) {
+            $totalModal += $p['total_investment'];
+            $totalValue += $p['total_quantity'] * ($p['last_price'] ?? 0);
+        }
+        $totalPL = $totalValue - $totalModal;
+
         $data = [
             'title' => 'Dashboard SahabatCuan',
-            'portfolio' => $portfolio
+            'portfolio' => $portfolio,
+            'summary' => [
+                'total_modal' => $totalModal,
+                'total_value' => $totalValue,
+                'total_pl' => $totalPL,
+                'pl_percent' => ($totalModal > 0) ? ($totalPL / $totalModal) * 100 : 0
+            ]
         ];
 
         return view('web/dashboard', $data);

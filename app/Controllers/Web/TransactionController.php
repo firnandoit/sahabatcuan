@@ -17,38 +17,39 @@ class TransactionController extends BaseController
         $this->stockModel = new StockModel();
     }
 
-    // Menampilkan daftar transaksi
+    // Halaman utama transaksi
     public function index()
     {
         $data = [
-            'title' => 'Riwayat Transaksi',
-            'transactions' => $this->transactionModel->orderBy('transaction_date', 'DESC')->findAll()
+            'title'  => 'Riwayat Transaksi',
+            'stocks' => $this->stockModel->findAll() // Untuk dropdown di Modal
         ];
         return view('web/transactions/index', $data);
     }
 
-    // Menampilkan form tambah transaksi
-    public function add()
+    // API untuk menarik data ke DataTables (JSON)
+    public function getTransactions()
     {
-        $data = [
-            'title' => 'Tambah Transaksi',
-            'stocks' => $this->stockModel->findAll() // Untuk dropdown pilihan saham
-        ];
-        return view('web/transactions/add', $data);
+        $data = $this->transactionModel->orderBy('transaction_date', 'DESC')->findAll();
+        return $this->response->setJSON(['data' => $data]);
     }
 
-    // Memproses penyimpanan data
-    public function store()
+    // Proses simpan via AJAX (Modal)
+    public function storeAjax()
     {
-        // Validasi sederhana
-        if (!$this->validate([
+        $rules = [
             'ticker'           => 'required',
             'type'             => 'required',
             'quantity'         => 'required|numeric',
             'price_per_unit'   => 'required|numeric',
             'transaction_date' => 'required|valid_date',
-        ])) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        ];
+
+        if (!$this->validate($rules)) {
+            return $this->response->setJSON([
+                'status' => 'error',
+                'errors' => $this->validator->getErrors()
+            ]);
         }
 
         $type  = $this->request->getPost('type');
@@ -56,11 +57,10 @@ class TransactionController extends BaseController
         $qty   = $this->request->getPost('quantity');
         $fee   = $this->request->getPost('broker_fee') ?? 0;
 
-        // Hitung total nominal (Beli = modal + fee, Jual = modal - fee)
         $totalAmount = ($type == 'BUY') ? ($price * $qty) + $fee : ($price * $qty) - $fee;
 
         $this->transactionModel->insert([
-            'user_id'          => 1, // Sementara hardcode ID dari Seeder
+            'user_id'          => 1, // Hardcode ID 1
             'ticker'           => $this->request->getPost('ticker'),
             'type'             => $type,
             'quantity'         => $qty,
@@ -71,6 +71,9 @@ class TransactionController extends BaseController
             'notes'            => $this->request->getPost('notes'),
         ]);
 
-        return redirect()->to('/web/transactions')->with('success', 'Transaksi berhasil dicatat!');
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'message' => 'Transaksi berhasil disimpan!'
+        ]);
     }
 }
