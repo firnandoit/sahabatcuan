@@ -6,36 +6,52 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
+// 1. DEFAULT ROUTE (Langsung ke login jika belum ada session)
 $routes->get('/', 'AuthController::login');
 
 // --- AUTHENTICATION ROUTES (WEB) ---
-$routes->get('login', 'AuthController::login');          // Tampilan Form Login
-$routes->post('auth/login', 'AuthController::attemptLogin'); // Proses Login
-$routes->get('logout', 'AuthController::logout');        // Logout
+$routes->get('login', 'AuthController::login');
+$routes->post('auth/login', 'AuthController::attemptLogin');
+$routes->get('logout', 'AuthController::logout');
 
 // 2. WEB ROUTES (Diproteksi dengan Filter 'auth')
-// Hanya user yang sudah login (session logged_in = true) yang bisa akses group ini
 $routes->group('web', ['filter' => 'auth'], function ($routes) {
 
-    // Dashboard Utama
+    // Dashboard Utama: Bisa diakses semua orang yang sudah login
     $routes->get('dashboard', 'Web\DashboardController::index');
 
-    // Manajemen Transaksi
-    $routes->group('transactions', function ($routes) {
+    // Manajemen Transaksi: Diproteksi izin 'manage_transactions'
+    $routes->group('transactions', ['filter' => 'perm:manage_transactions'], function ($routes) {
         $routes->get('/', 'Web\TransactionController::index');
-        $routes->get('add', 'Web\TransactionController::add');
-        $routes->post('store', 'Web\TransactionController::store');
-        $routes->get('delete/(:num)', 'Web\TransactionController::delete/$1');
 
-        // AJAX DATATABLES & MODAL
+        // AJAX DATA & MODAL
         $routes->get('get_data', 'Web\TransactionController::getTransactions');
         $routes->post('store_ajax', 'Web\TransactionController::storeAjax');
+
+        // Operasi lainnya
+        $routes->get('delete/(:num)', 'Web\TransactionController::delete/$1');
+    });
+
+    // Master Saham: Diproteksi izin 'manage_stocks' (Hanya Admin)
+    // Jika User biasa akses ini, akan muncul 404 (Page Not Found)
+
+    $routes->group('stocks', ['filter' => 'perm:manage_stocks'], function ($routes) {
+        $routes->get('/', 'Web\StockController::index');
+        $routes->get('get_data', 'Web\StockController::getStocks');
+        $routes->post('store', 'Web\StockController::store');
+        $routes->get('delete/(:any)', 'Web\StockController::delete/$1');
+    });
+    $routes->group('roles', ['filter' => 'perm:manage_stocks'], function ($routes) {
+        $routes->get('/', 'Web\RoleController::index');
+        $routes->get('get_json', 'Web\RoleController::getRoleJson'); // Endpoint JSON
+        $routes->get('get_permissions/(:num)', 'Web\RoleController::getPermissions/$1'); // Ambil data modal
+        $routes->post('update', 'Web\RoleController::updatePermissions'); // Simpan perubahan
     });
 });
 
 // 3. API ROUTES (Untuk Flutter)
+// Tidak menggunakan filter 'auth' web karena Flutter menggunakan metode lain (seperti Token)
 $routes->group('api', ['namespace' => 'App\Controllers\Api'], function ($routes) {
-    // Auth API - Arahkan ke Controller Api\Auth
     $routes->post('login', 'Auth::login');
     $routes->post('register', 'Auth::register');
 
@@ -46,7 +62,7 @@ $routes->group('api', ['namespace' => 'App\Controllers\Api'], function ($routes)
     $routes->post('transaction/store', 'TransactionController::store');
 });
 
-// 4. AUTOMATION ROUTES
+// 4. AUTOMATION ROUTES (Cron Job)
 $routes->group('market', function ($routes) {
     $routes->get('update', 'MarketController::updatePrices');
 });

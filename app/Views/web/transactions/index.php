@@ -110,6 +110,8 @@
         </div>
     </div>
 </div>
+<?= $this->endSection() ?>
+<?= $this->section('scripts') ?>
 
 <!-- SCRIPTS (Pastikan jQuery & DataTables sudah dipanggil di layout) -->
 <script>

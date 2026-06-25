@@ -8,6 +8,7 @@ class StockModel extends Model
 {
     protected $table            = 'stocks';
     protected $primaryKey       = 'ticker'; // Karena ticker adalah PK (BBCA.JK)
+    protected $useAutoIncrement = false;
     protected $returnType       = 'array';
     protected $allowedFields    = ['ticker', 'company_name', 'category', 'sector'];
 }

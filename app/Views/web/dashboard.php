@@ -109,3 +109,23 @@
     <?php endif; ?>
 </script>
 <?= $this->endSection() ?>
+<?= $this->section('scripts') ?>
+<script>
+    // Fungsi untuk mengupdate harga di background
+    function refreshMarketData() {
+        console.log("Syncing with Yahoo Finance...");
+
+        $.get("/market/update", function(response) {
+            if (response.status === 'success') {
+                // Jika sukses, muat ulang halaman dashboard agar angka berubah
+                // Atau bisa gunakan AJAX lagi untuk update table saja agar lebih smooth
+                window.location.reload();
+            }
+        });
+    }
+
+    // Jalankan setiap 1 menit (60000 ms)
+    // Jangan terlalu cepat (misal tiap 1 detik) agar IP Anda tidak diblokir Yahoo
+    setInterval(refreshMarketData, 60000);
+</script>
+<?= $this->endSection() ?>

@@ -22,7 +22,7 @@ class TransactionController extends BaseController
     {
         $data = [
             'title'  => 'Riwayat Transaksi',
-            'stocks' => $this->stockModel->findAll() // Untuk dropdown di Modal
+            'stocks' => $this->stockModel->findAll()
         ];
         return view('web/transactions/index', $data);
     }
@@ -30,7 +30,15 @@ class TransactionController extends BaseController
     // API untuk menarik data ke DataTables (JSON)
     public function getTransactions()
     {
-        $data = $this->transactionModel->orderBy('transaction_date', 'DESC')->findAll();
+        // AMBIL ID USER YANG SEDANG LOGIN
+        $userId = session()->get('user_id');
+
+        // HAK AKSES DATA: Hanya ambil transaksi milik user yang login
+        $data = $this->transactionModel
+            ->where('user_id', $userId)
+            ->orderBy('transaction_date', 'DESC')
+            ->findAll();
+
         return $this->response->setJSON(['data' => $data]);
     }
 
@@ -59,8 +67,10 @@ class TransactionController extends BaseController
 
         $totalAmount = ($type == 'BUY') ? ($price * $qty) + $fee : ($price * $qty) - $fee;
 
+        // SIMPAN DATA
         $this->transactionModel->insert([
-            'user_id'          => 1, // Hardcode ID 1
+            // GUNAKAN SESSION USER ID (BUKAN HARDCODE 1)
+            'user_id'          => session()->get('user_id'),
             'ticker'           => $this->request->getPost('ticker'),
             'type'             => $type,
             'quantity'         => $qty,
